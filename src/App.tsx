@@ -3,8 +3,19 @@ import { Input } from "./components/ui/input";
 import { Label } from "./components/ui/label";
 import { ChangeEvent, useRef, useState, FC } from "react";
 import Papa from "papaparse";
+import {
+  Table,
+  TableBody,
+  TableCaption,
+  TableCell,
+  TableFooter,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "../src/components/ui/table";
 
 import Draggable, { DraggableEvent, DraggableData } from 'react-draggable';
+
 
 interface ParsedData {
   [key: string]: string;
@@ -70,10 +81,9 @@ function App() {
   };
 
   return (
-    <div className=" w-full   bg-white h-screen p-4">
-      <div className="grid grid-cols-2 w-full h-[729px] bg-black ">
-        <div className="col-span-1 bg-blue-600">
-        
+    <div className=" w-full bg-white h-screen p-4 overflow-hidden">
+      <div className="flex w-full  bg-black ">
+        <div className="flex-1 bg-blue-600">
 
         <div className="parent" ref={parentRef}>
         <Draggable
@@ -91,13 +101,41 @@ function App() {
         
       </div>
       <button onClick={logPositions}>Log Positions</button>
-        
         </div>
-        <div className="col-span-1 bg-red-500 grid grid-rows-12">
-          <div className=" flex row-span-2 justify-end bg-slate-500">
-            <Input type="file" accept=".csv" className=" m-2 size-min"></Input>
+        <div className="flex-1 bg-red-500 ">
+          <div className=" flex justify-center gap-4 bg-slate-500 py-4">
+            <Input
+              type="file"
+              accept=".csv"
+              className=" m-2 size-min"
+              onChange={handleFileChange}
+            ></Input>
+            <button onClick={handleSubmit}>Upload</button>
           </div>
-          <div className="row-span-9 bg-slate-900"></div>
+          <div className=" bg-white h-[100vh] overflow-y-scroll p-4">
+            {data.length && (
+              <Table className="">
+                <TableHeader>
+                  <TableRow>
+                    {Object.keys(data[0]).map((key) => (
+                      <TableHead key={key} className="w-[100px]">
+                        {key}
+                      </TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.map((row, index) => (
+                    <TableRow key={index}>
+                      {Object.values(row).map((val, i) => (
+                        <TableCell key={i}>{val}</TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
         </div>
       </div>
     </div>
