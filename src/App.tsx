@@ -77,8 +77,8 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
       className="bg-slate-400 opacity-50 border-2 border-darkblue flex justify-start items-start cursor-move"
       size={{ width: size.width, height: size.height }}
       position={{ x: position.x, y: position.y }}
-      onDragStop={(e: any, d: any) => onUpdate(id, { x: d.x, y: d.y }, size)}
-      onResizeStop={(e, direction, ref, delta, newPosition) => {
+      onDragStop={(_: any, d: any) => onUpdate(id, { x: d.x, y: d.y }, size)}
+      onResizeStop={(_, __, ref, ___, newPosition) => {
         onUpdate(id, newPosition, {
           width: parseInt(ref.style.width, 10),
           height: parseInt(ref.style.height, 10),
