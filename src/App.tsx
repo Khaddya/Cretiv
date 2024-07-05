@@ -190,8 +190,6 @@ function App() {
     fetch("https://photo-content-generator.onrender.com/uploadImage", {
       method: "POST",
       body: formdata,
-      redirect: "follow",
-      mode: "no-cors",
     })
       .then((response) => response.text())
       .then((result) => console.log(result))
