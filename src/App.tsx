@@ -119,6 +119,25 @@ function App() {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedDiv, setSelectedDiv] = useState<DivData | null>(null);
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([]);
+  const [otp, setOtp] = useState("");
+
+  const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setOtp(e.target.value);
+  };
+
+  const SendOTP = (e: React.FormEvent) => {
+    e.preventDefault();
+    fetch("https://photo-content-generator.onrender.com/sendOTP", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({ otp }),
+    })
+      .then((response) => response.json())
+      .then((data) => console.log(data))
+      .catch((error) => console.error(error));
+  };
 
   const TextboxRequestBody = () => {
     const updatedData = divs.map((div) => ({
@@ -339,6 +358,18 @@ function App() {
             >
               Send Phone Numbers
             </button>
+            <form onSubmit={SendOTP} className="otp-form">
+              <input
+                type="text"
+                value={otp}
+                onChange={handleOTPChange}
+                placeholder="Enter OTP"
+                className="otp-input"
+              />
+              <button type="submit" className="otp-submit-button">
+                Submit
+              </button>
+            </form>
           </div>
           <div className="parent" ref={parentRef}>
             {divs.map((div) => {
