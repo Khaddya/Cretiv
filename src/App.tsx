@@ -45,6 +45,7 @@ interface DraggableResizableDivProps {
     position: { x: number; y: number },
     size: { width: number; height: number }
   ) => void;
+  onClick: () => void;
   fontFamily: string;
   name: string;
   fontColor: RGBColor;
@@ -69,6 +70,7 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
   fontFamily,
   name,
   fontColor,
+  onClick,
 }) => {
   const fontSize = Math.min(size.width, size.height) * 0.3;
 
@@ -101,6 +103,7 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
           fontFamily: fontFamily,
           color: `rgba(${fontColor.r}, ${fontColor.g}, ${fontColor.b}, ${fontColor.a})`,
         }}
+        onClick={onClick}
       >
         {name}
       </div>
@@ -114,8 +117,9 @@ function App() {
   const [data, setData] = useState<ParsedData[]>([]);
   const [divs, setDivs] = useState<DivData[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [selectedDiv, setSelectedDiv] = useState<DivData | null>(null);
 
-  const handleDataRequest = async () => {
+  const TextboxRequestBody = () => {
     const updatedData = divs.map((div) => ({
       data: {
         Metadetails: {
@@ -134,6 +138,22 @@ function App() {
     }));
 
     setVarContent(updatedData);
+  };
+
+  const SendTextBoxRequest = async () => {
+    const response = await fetch(
+      "https://photo-content-generator.onrender.com/sendDataRequest",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ data: varContent }),
+      }
+    );
+
+    const data = await response.json();
+    console.log(data);
   };
 
   const handleImgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -247,9 +267,25 @@ function App() {
           <div>
             <div>
               <input type="file" onChange={handleImgFileChange} />
-              <button onClick={handleFinalSubmit}>Upload</button>
+              <button
+                onClick={handleFinalSubmit}
+                className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
+              >
+                Upload
+              </button>
             </div>
-            <div onClick={handleDataRequest}>SEND DATA REQUEST</div>
+            <button
+              onClick={TextboxRequestBody}
+              className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2"
+            >
+              Log Data
+            </button>
+            <button
+              onClick={SendTextBoxRequest}
+              className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
+            >
+              Send Textbox Data
+            </button>
           </div>
           <div className="parent" ref={parentRef}>
             {divs.map((div) => {
@@ -264,6 +300,7 @@ function App() {
                     name={div.header}
                     fontFamily={div.fontFamily}
                     fontColor={div.fontColor}
+                    onClick={() => setSelectedDiv(div)}
                   />
                 );
               }
@@ -329,14 +366,16 @@ function App() {
                 ))}
               </TableRow>
               <TableRow>
-                {divs.map((div) => (
-                  <TableCell key={div.id}>
+                {selectedDiv && (
+                  <TableCell>
                     <SketchPicker
-                      color={div.fontColor}
-                      onChange={(color) => handleColorChange(div.id, color)}
+                      color={selectedDiv.fontColor}
+                      onChange={(color) =>
+                        handleColorChange(selectedDiv.id, color)
+                      }
                     />
                   </TableCell>
-                ))}
+                )}
               </TableRow>
             </TableBody>
           </Table>
