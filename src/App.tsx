@@ -118,6 +118,7 @@ function App() {
   const [divs, setDivs] = useState<DivData[]>([]);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [selectedDiv, setSelectedDiv] = useState<DivData | null>(null);
+  const [phoneNumbers, setPhoneNumbers] = useState<string[]>([]);
 
   const TextboxRequestBody = () => {
     const updatedData = divs.map((div) => ({
@@ -152,6 +153,24 @@ function App() {
       }
     );
 
+    const data = await response.json();
+    console.log(data);
+  };
+
+  const SendPhoneNumbers = async () => {
+    const response = await fetch(
+      "https://photo-content-generator.onrender.com/sendPhoneNumbers",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          contacts: phoneNumbers,
+          phone: "+919353798875",
+        }),
+      }
+    );
     const data = await response.json();
     console.log(data);
   };
@@ -224,25 +243,53 @@ function App() {
   }, [data]);
 
   useEffect(() => {
+    if (phoneNumbers.length) {
+      console.log("Extracted Phone Numbers:", phoneNumbers);
+      // You can also display these numbers in your UI
+    }
+  }, [phoneNumbers]);
+
+  useEffect(() => {
     if (varContent.length) {
       console.log(varContent);
     }
   }, [varContent]);
 
   const ClickSubmit = (keys: string[], data: ParsedData[]) => {
+    const phoneHeaders = ["contact", "phone", "mobile", "tel"]; // Add variations here
+
+    const extractedPhoneNumbers: string[] = [];
+
     setDivs((prevDivs) => [
       ...prevDivs,
-      ...keys.map((key) => ({
-        id: key,
-        position: { x: 0, y: 0 },
-        header: key,
-        size: { width: 80, height: 50 },
-        active: true,
-        fontFamily: "Roboto",
-        fontColor: { r: 0, g: 0, b: 0, a: 1 },
-        info: data.map((d) => d[key]),
-      })),
+      ...keys.map((key) => {
+        const info = data.map((d) => d[key]);
+
+        // Check if the key matches any phone header variation
+        const isPhoneHeader = phoneHeaders.some((header) =>
+          key.toLowerCase().includes(header)
+        );
+
+        // If it's a phone header, extract numbers
+        if (isPhoneHeader) {
+          extractedPhoneNumbers.push(...info);
+        }
+
+        return {
+          id: key,
+          position: { x: 0, y: 0 },
+          header: key,
+          size: { width: 80, height: 50 },
+          active: true,
+          fontFamily: "Roboto",
+          fontColor: { r: 0, g: 0, b: 0, a: 1 },
+          info: info,
+        };
+      }),
     ]);
+
+    // Update the state with extracted phone numbers
+    setPhoneNumbers(extractedPhoneNumbers);
   };
 
   useEffect(() => {
@@ -285,6 +332,12 @@ function App() {
               className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
             >
               Send Textbox Data
+            </button>
+            <button
+              onClick={SendPhoneNumbers}
+              className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
+            >
+              Send Phone Numbers
             </button>
           </div>
           <div className="parent" ref={parentRef}>
