@@ -20,20 +20,16 @@ interface ParsedData {
 
 interface MetaDetails {
   Name: string;
-  IsItalic: string;
-  IsBold: string;
+  IsItalic: boolean;
+  IsBold: boolean;
   Color: RGBColor;
   Size: number;
 }
 
 interface VarContentData {
-  Metadetails: MetaDetails;
+  MetaDetails: MetaDetails;
   VarContent: string[];
   Location: { X: number; Y: number };
-}
-
-interface VarContentProps {
-  data: VarContentData;
 }
 
 interface DraggableResizableDivProps {
@@ -62,6 +58,11 @@ interface DivData {
   info: string[];
 }
 
+interface conversionRate {
+  x: number;
+  y: number;
+}
+
 const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
   id,
   position,
@@ -72,7 +73,7 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
   fontColor,
   onClick,
 }) => {
-  const fontSize = Math.min(size.width, size.height) * 0.3;
+  const fontSize = Math.min(size.width, size.height) * 0.7;
 
   return (
     <Rnd
@@ -112,7 +113,7 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
 };
 
 function App() {
-  const [varContent, setVarContent] = useState<VarContentProps[]>([]);
+  const [varContent, setVarContent] = useState<VarContentData[]>([]);
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<ParsedData[]>([]);
   const [divs, setDivs] = useState<DivData[]>([]);
@@ -120,14 +121,15 @@ function App() {
   const [selectedDiv, setSelectedDiv] = useState<DivData | null>(null);
   const [phoneNumbers, setPhoneNumbers] = useState<string[]>([]);
   const [otp, setOtp] = useState("");
-
+  const [aspectRatio, setAspectRatio] = useState(1);
+  const [pixelCR, setPixelCR] = useState({ x: 1, y: 1 });
   const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setOtp(e.target.value);
   };
 
   const SendOTP = (e: React.FormEvent) => {
     e.preventDefault();
-    fetch("https://photo-content-generator.onrender.com/sendOTP", {
+    fetch("http://localhost:8080/share", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -141,19 +143,19 @@ function App() {
 
   const TextboxRequestBody = () => {
     const updatedData = divs.map((div) => ({
-      data: {
-        Metadetails: {
-          Name: div.header,
-          IsItalic: "false",
-          IsBold: "false",
-          Color: div.fontColor,
-          Size: Math.min(div.size.width, div.size.height) * 0.3,
-        },
-        VarContent: div.info, // Assuming content is header, modify as needed
-        Location: {
-          X: div.position.x,
-          Y: div.position.y,
-        },
+      MetaDetails: {
+        Name: "Roboto",
+        IsItalic: false,
+        IsBold: false,
+        Color: div.fontColor,
+        Size:
+           Math.round(Math.min(div.size.width * pixelCR.x, div.size.height * pixelCR.y) *
+          0.7),
+      },
+      VarContent: div.info, // Assuming content is header, modify as needed
+      Location: {
+        X: Math.round(div.position.x * pixelCR.x),
+        Y: Math.round(div.position.y * pixelCR.y),
       },
     }));
 
@@ -161,42 +163,64 @@ function App() {
   };
 
   const SendTextBoxRequest = async () => {
-    const response = await fetch(
-      "https://photo-content-generator.onrender.com/sendDataRequest",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ data: varContent }),
-      }
-    );
+    let req = JSON.stringify({ VarTextBoxes: varContent });
+    console.log(req);
+    const response = await fetch("http://localhost:8080/sendTextBoxes", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: req,
+    });
 
-    const data = await response.json();
+    const data = await response.text();
     console.log(data);
   };
 
   const SendPhoneNumbers = async () => {
-    const response = await fetch(
-      "https://photo-content-generator.onrender.com/sendPhoneNumbers",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          contacts: phoneNumbers,
-          phone: "+919353798875",
-        }),
-      }
-    );
+    const response = await fetch("http://localhost:8080/initAuth", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        contacts: Array.from(new Set(phoneNumbers)),
+        phone: "+919353798875",
+      }),
+    });
     const data = await response.json();
     console.log(data);
   };
 
+  // Function to handle file change
   const handleImgFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     if (event.target.files && event.target.files.length > 0) {
-      setSelectedFile(event.target.files[0]);
+      const file = event.target.files[0];
+      setSelectedFile(file);
+
+      // Create an object URL to preview the image
+      const fileUrl = URL.createObjectURL(file);
+
+      // Load the image to get its dimensions
+      const img = new Image();
+      img.src = fileUrl;
+      img.onload = () => {
+        const width = img.width;
+        const height = img.height;
+        console.log("Width :", width, " Height :", height);
+
+        // Calculate and set the aspect ratio
+        const aspectRatio = width / height;
+        setAspectRatio(aspectRatio);
+        setPixelCR({ x: width / 500, y: (height * aspectRatio) / 500 });
+      };
+
+      if (parentRef.current) {
+        parentRef.current.style.backgroundImage = `url(${fileUrl})`;
+        parentRef.current.style.aspectRatio = `${aspectRatio}`;
+      } else {
+        console.log("Parent ref not available");
+      }
     }
   };
 
@@ -244,8 +268,11 @@ function App() {
     const formdata = new FormData();
     formdata.append("image", selectedFile);
     console.log("Hi man");
-
-    fetch("https://photo-content-generator.onrender.com/uploadImage", {
+    fetch("http://localhost:8080/ping")
+      .then((res) => res.text())
+      .then((data) => console.log(data))
+      .catch((err) => console.error(err));
+    fetch("http://localhost:8080/uploadImage", {
       method: "POST",
       body: formdata,
     })
@@ -298,10 +325,10 @@ function App() {
           id: key,
           position: { x: 0, y: 0 },
           header: key,
-          size: { width: 80, height: 50 },
+          size: { width: 150, height: 50 },
           active: true,
           fontFamily: "Roboto",
-          fontColor: { r: 0, g: 0, b: 0, a: 1 },
+          fontColor: { r: 0, g: 0, b: 0, a: 255 },
           info: info,
         };
       }),
@@ -330,8 +357,31 @@ function App() {
     <div className="w-full bg-white h-screen p-4 ">
       <div className="flex w-full bg-black">
         <div className="flex-1 bg-blue-600 ">
+          
+          <div className="parent" ref={parentRef}>
+            {divs.map((div) => {
+              if (div.active) {
+                return (
+                  <DraggableResizableDiv
+                    key={div.id}
+                    id={div.id}
+                    position={div.position}
+                    size={div.size}
+                    onUpdate={updateDiv}
+                    name={div.header}
+                    fontFamily={div.fontFamily}
+                    fontColor={div.fontColor}
+                    onClick={() => setSelectedDiv(div)}
+                  />
+                );
+              }
+              return null;
+            })}
+            
+          </div>
           <div>
             <div>
+              <h2>Upload Poster</h2>
               <input type="file" onChange={handleImgFileChange} />
               <button
                 onClick={handleFinalSubmit}
@@ -370,26 +420,6 @@ function App() {
                 Submit
               </button>
             </form>
-          </div>
-          <div className="parent" ref={parentRef}>
-            {divs.map((div) => {
-              if (div.active) {
-                return (
-                  <DraggableResizableDiv
-                    key={div.id}
-                    id={div.id}
-                    position={div.position}
-                    size={div.size}
-                    onUpdate={updateDiv}
-                    name={div.header}
-                    fontFamily={div.fontFamily}
-                    fontColor={div.fontColor}
-                    onClick={() => setSelectedDiv(div)}
-                  />
-                );
-              }
-              return null;
-            })}
           </div>
           <Table>
             <TableHeader>
