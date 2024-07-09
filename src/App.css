@@ -3,21 +3,32 @@
 }
 
 .parent {
-  width: 400px;
-  aspect-ratio: 1/1.25;
+  
+  width: 500px;
+  aspect-ratio: 1;
   /* border: 1px solid black; */
   position: relative;
-  background-image: url("/public/bgg.png");
+  background-image: url("/public/default.png");
   background-size: cover;
-  margin: 20px auto;
+  margin: auto;
+  margin-top: 5rem;
+  margin-bottom: 1rem;
+  
 }
 
 .child {
   width: 100px;
   height: 100px;
-  background-color: rgba(255, 255, 255, 0.7);
+  background-color: rgba(255, 255, 255, 1);
   border: 1px solid black;
   text-align: center;
   line-height: 100px;
   position: absolute;
+}
+
+.active {
+  border: 6px solid black;
+}
+.bold {
+  font-weight: 900;
 }
