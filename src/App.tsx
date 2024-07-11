@@ -1,5 +1,5 @@
 import "./App.css";
-import { Bold, Italic, Underline } from "lucide-react";
+import { Bold, Italic, Underline, User, User2 } from "lucide-react";
 import { Input } from "./components/ui/input";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import Papa from "papaparse";
@@ -44,7 +44,6 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Toggle } from "./components/ui/toggle";
 import { Label } from "./components/ui/label";
-import { log } from "console";
 
 interface ParsedData {
   [key: string]: string;
@@ -58,13 +57,33 @@ interface MetaDetails {
   Size: number;
 }
 
+interface VarImageBoxes {
+  MetaDetails: {
+    Size: {
+      Width: number;
+      Height: number;
+    };
+  };
+  ImageLink: string[];
+  Location: {
+    X: number;
+    Y: number;
+  };
+}
+
 interface VarContentData {
   MetaDetails: MetaDetails;
   VarContent: string[];
   Location: { X: number; Y: number };
 }
 
+interface sendTextBoxes {
+  VarTextBoxes: VarContentData[];
+  VarImageBoxes: VarImageBoxes[];
+}
+
 interface DraggableResizableDivProps {
+  isImage: boolean;
   id: string;
   position: { x: number; y: number };
   size: { width: number; height: number };
@@ -93,6 +112,7 @@ interface DivData {
   info: string[];
   isBold: boolean;
   isItalic: boolean;
+  isImage: boolean;
 }
 
 interface conversionRate {
@@ -112,6 +132,7 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
   isSelected,
   isBold,
   isItalic,
+  isImage,
 }) => {
   const fontSize = Math.min(size.width, size.height) * 0.7;
 
@@ -138,8 +159,8 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
           overflow: "hidden",
           wordWrap: "break-word",
           display: "flex",
-          justifyContent: "start",
-          alignItems: "start",
+          justifyContent: `${isImage ? "center" : "start"}`,
+          alignItems: `${isImage ? "center" : "start"}`,
           width: "100%",
           height: "100%",
           textAlign: "start",
@@ -150,14 +171,17 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
         }}
         onClick={onClick}
       >
-        {name}
+        {isImage ? <User2 size={fontSize} /> : name}
       </div>
     </Rnd>
   );
 };
 
 function App() {
-  const [varContent, setVarContent] = useState<VarContentData[]>([]);
+  const [varContent, setVarContent] = useState<sendTextBoxes>({
+    VarTextBoxes: [],
+    VarImageBoxes: [],
+  });
   const [file, setFile] = useState<File | null>(null);
   const [data, setData] = useState<ParsedData[]>([]);
   const [divs, setDivs] = useState<DivData[]>([]);
@@ -167,11 +191,9 @@ function App() {
   const [otp, setOtp] = useState("");
   const [aspectRatio, setAspectRatio] = useState(1);
   const [pixelCR, setPixelCR] = useState({ x: 1, y: 1 });
-  const [font, setFont] = useState("Roboto");
-  const [isBold, setIsBold] = useState(false);
-  const [isItalic, setIsItalic] = useState(false);
+
   const [phone, setPhone] = useState("");
-  const [isDemo,setIsDemo] = useState(false)
+  const [isDemo, setIsDemo] = useState(false);
   // const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   setOtp(e.target.value);
   // };
@@ -190,8 +212,8 @@ function App() {
   };
 
   const UpdateTextbox = () => {
-    const updatedData = divs
-      .filter((div) => div.active)
+    const textBoxes = divs
+      .filter((div) => div.active && div.isImage === false)
       .map((div) => {
         return {
           MetaDetails: {
@@ -214,6 +236,29 @@ function App() {
         };
       });
 
+    const imageBoxes = divs
+      .filter((div) => div.active && div.isImage === true)
+      .map((div) => {
+        return {
+          MetaDetails: {
+            Size: {
+              Width: Math.round(div.size.width * pixelCR.x),
+              Height: Math.round(div.size.height * pixelCR.y),
+            },
+          },
+          ImageLink: div.info, // Assuming info is the image URL, modify as needed
+          Location: {
+            X: Math.round(div.position.x * pixelCR.x),
+            Y: Math.round(div.position.y * pixelCR.y),
+          },
+        };
+      });
+
+    const updatedData: sendTextBoxes = {
+      VarTextBoxes: textBoxes,
+      VarImageBoxes: imageBoxes,
+    };
+
     setVarContent(updatedData);
   };
 
@@ -234,7 +279,12 @@ function App() {
   };
 
   const SendPhoneNumbers = async () => {
-    const demoContacts=["+919353798875","+918762037401","+917259109746","+919741050370"]
+    const demoContacts = [
+      "+919353798875",
+      "+918762037401",
+      "+917259109746",
+      "+919741050370",
+    ];
 
     const response = await fetch("http://localhost:8080/initAuth", {
       method: "POST",
@@ -242,7 +292,7 @@ function App() {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contacts: isDemo?demoContacts:Array.from(new Set(phoneNumbers)),
+        contacts: isDemo ? demoContacts : Array.from(new Set(phoneNumbers)),
         phone: "+91" + phone,
       }),
     });
@@ -355,7 +405,7 @@ function App() {
   }, [phoneNumbers]);
 
   useEffect(() => {
-    if (varContent.length) {
+    if (varContent) {
       console.log(varContent);
     }
   }, [varContent]);
@@ -380,6 +430,22 @@ function App() {
           extractedPhoneNumbers.push(...info);
         }
 
+        if (key.toLowerCase().includes("img")) {
+          return {
+            id: key,
+            position: { x: 0, y: 0 },
+            header: key,
+            size: { width: 150, height: 50 },
+            active: true,
+            fontFamily: "Roboto",
+            fontColor: { r: 0, g: 0, b: 0, a: 255 },
+            info: info,
+            isBold: false,
+            isItalic: false,
+            isImage: true,
+          };
+        }
+
         return {
           id: key,
           position: { x: 0, y: 0 },
@@ -391,6 +457,7 @@ function App() {
           info: info,
           isBold: false,
           isItalic: false,
+          isImage: false,
         };
       }),
     ]);
@@ -419,14 +486,21 @@ function App() {
       console.log("Hello");
 
       setDivs(
-        divs.map((div) => (div.id === id ? { ...div, isBold: isBold } : div))
+        divs.map((div) =>
+          div.id === id ? { ...div, isBold: !div.isBold } : div
+        )
       );
     }
   };
   const handleItalicChange = (id: string | undefined) => {
     if (id)
-      setDivs(divs.map((div) => (div.id === id ? { ...div, isItalic } : div)));
+      setDivs(
+        divs.map((div) =>
+          div.id === id ? { ...div, isItalic: !div.isItalic } : div
+        )
+      );
   };
+
   return (
     <div className="w-full bg-white h-screen py-4 ">
       <div className="fixed z-10 bg-black w-[70vw] py-3 flex ml-[10%] rounded-lg justify-center gap-10">
@@ -452,11 +526,33 @@ function App() {
           <DropdownMenuContent className="w-56">
             <DropdownMenuLabel>Font name</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuRadioGroup value={font} onValueChange={setFont}>
-              <DropdownMenuRadioItem value="Roboto">
+            <DropdownMenuRadioGroup value={selectedDiv?.fontFamily}>
+              <DropdownMenuRadioItem
+                value="Roboto"
+                onClick={() => {
+                  setDivs(
+                    divs.map((div) =>
+                      div.id === selectedDiv?.id
+                        ? { ...div, fontFamily: "Roboto" }
+                        : div
+                    )
+                  );
+                }}
+              >
                 Roboto
               </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem value="Poppins">
+              <DropdownMenuRadioItem
+                value="Poppins"
+                onClick={() => {
+                  setDivs(
+                    divs.map((div) =>
+                      div.id === selectedDiv?.id
+                        ? { ...div, fontFamily: "Poppins" }
+                        : div
+                    )
+                  );
+                }}
+              >
                 Poppins
               </DropdownMenuRadioItem>
             </DropdownMenuRadioGroup>
@@ -466,7 +562,6 @@ function App() {
           <Toggle
             value="bold"
             onClick={() => {
-              setIsBold((prev) => !prev);
               handleBoldChange(selectedDiv?.id);
             }}
             aria-label="Toggle bold"
@@ -477,20 +572,12 @@ function App() {
           <Toggle
             value="italic"
             onClick={() => {
-              setIsItalic((prev) => !prev);
               handleItalicChange(selectedDiv?.id);
             }}
             aria-label="Toggle italic"
             className="bg-black text-white border-2 border-white "
           >
             <Italic className="h-4 w-4" />
-          </Toggle>
-          <Toggle
-            value="underline"
-            aria-label="Toggle underline"
-            className="bg-black text-white border-2 border-white "
-          >
-            <Underline className="h-4 w-4" />
           </Toggle>
         </div>
       </div>
@@ -626,34 +713,25 @@ function App() {
               if (div.active) {
                 return (
                   <DraggableResizableDiv
+                    isImage={div.isImage}
                     key={div.id}
                     id={div.id}
                     position={div.position}
                     size={div.size}
                     onUpdate={updateDiv}
                     name={div.header}
-                    fontFamily={
-                      selectedDiv?.id === div.id ? font : div.fontFamily
-                    }
+                    fontFamily={div.fontFamily}
                     fontColor={div.fontColor}
                     onClick={() => {
-                      handleBoldChange(selectedDiv?.id)
-                      handleItalicChange(selectedDiv?.id)
-                      setSelectedDiv(div); 
-                      if(selectedDiv){
-                        setIsBold(selectedDiv.isBold)
-                        setIsItalic(selectedDiv.isItalic)
-                    }
-                      
-                  }}
+                      setSelectedDiv(div);
+                    }}
                     isSelected={div.id === selectedDiv?.id}
-                    isBold={div.id === selectedDiv?.id ? isBold : div.isBold}
-                    isItalic={
-                      div.id == selectedDiv?.id ? isItalic : div.isItalic
-                    }
+                    isBold={div.isBold}
+                    isItalic={div.isItalic}
                   />
                 );
               }
+
               return null;
             })}
           </div>
