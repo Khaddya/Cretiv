@@ -168,6 +168,8 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
           color: `rgba(${fontColor.r}, ${fontColor.g}, ${fontColor.b}, ${255})`,
           fontWeight: isBold ? "900" : "normal",
           fontStyle: isItalic ? "italic" : "normal",
+          opacity: 1,
+          zIndex: 10,
         }}
         onClick={onClick}
       >
@@ -264,7 +266,7 @@ function App() {
 
   const SendTextBoxRequest = async () => {
     UpdateTextbox();
-    let req = JSON.stringify({ VarTextBoxes: varContent });
+    let req = JSON.stringify(varContent);
     console.log(req);
     const response = await fetch("http://localhost:8080/sendTextBoxes", {
       method: "POST",
@@ -477,7 +479,7 @@ function App() {
   const handleColorChange = (id: string, color: ColorResult) => {
     setDivs(
       divs.map((div) =>
-        div.id === id ? { ...div, fontColor: { ...color.rgb } } : div
+        div.id === id ? { ...div, fontColor: { ...color.rgb,a: 255} } : div
       )
     );
   };
