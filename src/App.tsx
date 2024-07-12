@@ -265,9 +265,8 @@ function App() {
   };
 
   const SendTextBoxRequest = async () => {
-    UpdateTextbox();
     let req = JSON.stringify(varContent);
-    console.log(req);
+    console.log("Before sending", req);
     const response = await fetch("http://localhost:8080/sendTextBoxes", {
       method: "POST",
       headers: {
@@ -277,7 +276,7 @@ function App() {
     });
 
     const data = await response.text();
-    console.log(data);
+    console.log("Response:", data);
   };
 
   const SendPhoneNumbers = async () => {
@@ -408,7 +407,7 @@ function App() {
 
   useEffect(() => {
     if (varContent) {
-      console.log(varContent);
+      console.log("VarContent", varContent);
     }
   }, [varContent]);
 
@@ -479,9 +478,11 @@ function App() {
   const handleColorChange = (id: string, color: ColorResult) => {
     setDivs(
       divs.map((div) =>
-        div.id === id ? { ...div, fontColor: { ...color.rgb,a: 255} } : div
+        div.id === id ? { ...div, fontColor: { ...color.rgb, a: 255 } } : div
       )
     );
+
+    UpdateTextbox();
   };
   const handleBoldChange = (id: string | undefined) => {
     if (id) {
@@ -654,7 +655,6 @@ function App() {
 
         <button
           onClick={() => {
-            UpdateTextbox();
             setTimeout(() => {}, 500);
             SendTextBoxRequest();
           }}
