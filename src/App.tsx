@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "../src/components/ui/table";
-
+import { AddNewItem } from "./components/AddNewItem";
 import { Rnd } from "react-rnd";
 import { SketchPicker, ColorResult, RGBColor } from "react-color";
 import {
@@ -44,6 +44,8 @@ import {
 import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
 import { Toggle } from "./components/ui/toggle";
 import { Label } from "./components/ui/label";
+import DND from "./DND";
+import { arrayMove } from "@dnd-kit/sortable";
 
 interface ParsedData {
   [key: string]: string;
@@ -101,6 +103,11 @@ interface DraggableResizableDivProps {
   isItalic: boolean;
 }
 
+interface Item {
+  name: string;
+  id: number;
+}
+
 interface DivData {
   id: string;
   position: { x: number; y: number };
@@ -113,6 +120,11 @@ interface DivData {
   isBold: boolean;
   isItalic: boolean;
   isImage: boolean;
+}
+
+interface Item {
+  name: string;
+  id: number;
 }
 
 interface conversionRate {
@@ -199,6 +211,21 @@ function App() {
   // const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   setOtp(e.target.value);
   // };
+
+  const [items, setItems] = useState<Item[]>([]);
+
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (active.id !== over.id) {
+      setItems((prevItems) => {
+        const oldIndex = prevItems.findIndex((item) => item.id === active.id);
+        const newIndex = prevItems.findIndex((item) => item.id === over.id);
+
+        return arrayMove(prevItems, oldIndex, newIndex);
+      });
+    }
+  };
 
   const SendOTP = () => {
     fetch("http://localhost:8080/share", {
@@ -393,8 +420,24 @@ function App() {
 
   useEffect(() => {
     if (data.length) {
+      console.log(data);
+
+      console.log("CLICKED AGAGAGAA");
       const keys = Object.keys(data[0]);
       ClickSubmit(keys, data);
+      let itemsArray: Item[] = [];
+      keys.forEach((key) => {
+        if (key.toLowerCase().includes("img")) {
+          data.forEach((row) => {
+            const imgValue = row[key];
+            itemsArray.push({ name: imgValue, id: Math.random() * 1000 });
+          });
+        }
+      });
+      console.log("Items Array", itemsArray);
+      itemsArray.pop();
+
+      setItems(itemsArray);
     }
   }, [data]);
 
@@ -584,7 +627,7 @@ function App() {
           </Toggle>
         </div>
       </div>
-      <div className="fixed z-10 bg-white p-4 mt-[70vh] ml-[60vw] rounded-lg border-2 border-black">
+      <div className="fixed z-10 bg-white p-4 mt-[70vh] ml-[20vw] rounded-lg border-2 border-black">
         <div>
           <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
             Poster Panel
@@ -737,6 +780,7 @@ function App() {
               return null;
             })}
           </div>
+
           <Table>
             <TableBody>
               <TableRow>
@@ -758,7 +802,6 @@ function App() {
                   </TableCell>
                 ))}
               </TableRow>
-              <TableRow></TableRow>
             </TableBody>
           </Table>
         </div>
@@ -772,28 +815,36 @@ function App() {
             />
             <button onClick={handleSubmit}>Upload</button>
           </div>
-          <div className="bg-white h-[100vh] overflow-y-scroll p-4">
+          <div className="bg-white h-[100vh] p-4 flex">
             {data.length > 0 && (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    {Object.keys(data[0]).map((key) => (
-                      <TableHead key={key} className="w-[100px]">
-                        {key}
-                      </TableHead>
-                    ))}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {data.map((row, index) => (
-                    <TableRow key={index}>
-                      {Object.values(row).map((val, i) => (
-                        <TableCell key={i}>{val}</TableCell>
+              <div className="overflow-y-scroll">
+                <div className="flex ">
+                  {" "}
+                  <Table>
+                    <TableHeader className="">
+                      <TableRow>
+                        {Object.keys(data[0]).map((key) => (
+                          <TableHead key={key} className="w-[100px]">
+                            {key}
+                          </TableHead>
+                        ))}
+                      </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                      {data.map((row, index) => (
+                        <TableRow key={index} className="h-[60px]">
+                          {Object.values(row).map((val, i) => (
+                            <TableCell key={i}>{val}</TableCell>
+                          ))}
+                        </TableRow>
                       ))}
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                    </TableBody>
+                  </Table>
+                  {items.length > 0 && (
+                    <DND items={items} key={1} handleDragEnd={handleDragEnd} />
+                  )}
+                </div>
+              </div>
             )}
           </div>
         </div>
