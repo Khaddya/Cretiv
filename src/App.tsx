@@ -46,7 +46,7 @@ import { Toggle } from "./components/ui/toggle";
 import { Label } from "./components/ui/label";
 import DND from "./DND";
 import { arrayMove } from "@dnd-kit/sortable";
-
+import LoadingOverlay from "react-loading-overlay-ts";
 interface ParsedData {
   [key: string]: string;
 }
@@ -150,8 +150,9 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
 
   return (
     <Rnd
-      className={`bg-slate-400 opacity-50 border-2 border-darkblue flex justify-start items-start cursor-move ${isSelected ? "active" : ""
-        } `}
+      className={`bg-slate-400 opacity-50 border-2 border-darkblue flex justify-start items-start cursor-move ${
+        isSelected ? "active" : ""
+      } `}
       size={{ width: size.width, height: size.height }}
       position={{ x: position.x, y: position.y }}
       onDragStop={(_: any, d: any) => onUpdate(id, { x: d.x, y: d.y }, size)}
@@ -204,9 +205,9 @@ function App() {
   const [otp, setOtp] = useState("");
   const [aspectRatio, setAspectRatio] = useState(1);
   const [pixelCR, setPixelCR] = useState({ x: 1, y: 1 });
-
+  const [isLoading, setIsLoading] = useState(false);
   const [phone, setPhone] = useState("");
-  const [isDemo, setIsDemo] = useState(false);
+  const baseURL ="http://localhost:8080"
   // const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   setOtp(e.target.value);
   // };
@@ -227,7 +228,7 @@ function App() {
   };
 
   const SendOTP = () => {
-    fetch("http://localhost:8080/share", {
+    fetch(baseURL+"/share", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -293,7 +294,7 @@ function App() {
   const SendTextBoxRequest = async () => {
     let req = JSON.stringify(varContent);
     console.log("Before sending", req);
-    const response = await fetch("http://localhost:8080/sendTextBoxes", {
+    const response = await fetch(baseURL+"/sendTextBoxes", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -306,20 +307,13 @@ function App() {
   };
 
   const SendPhoneNumbers = async () => {
-    const demoContacts = [
-      "+919353798875",
-      "+918762037401",
-      "+917259109746",
-      "+919741050370",
-    ];
-
-    const response = await fetch("http://localhost:8080/initAuth", {
+    const response = await fetch(baseURL+"/initAuth", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        contacts: isDemo ? demoContacts : Array.from(new Set(phoneNumbers)),
+        contacts: Array.from(new Set(phoneNumbers)),
         phone: "+91" + phone,
       }),
     });
@@ -396,6 +390,7 @@ function App() {
   };
 
   const handleFinalSubmit = async () => {
+    setIsLoading(true);
     if (!selectedFile) {
       console.error("No file selected.");
       return;
@@ -404,16 +399,18 @@ function App() {
     const formdata = new FormData();
     formdata.append("image", selectedFile);
     console.log("Hi man");
-    fetch("http://localhost:8080/ping")
+    fetch(baseURL+"/ping")
       .then((res) => res.text())
       .then((data) => console.log(data))
       .catch((err) => console.error(err));
-    fetch("http://localhost:8080/uploadImage", {
+    fetch(baseURL+"/uploadImage", {
       method: "POST",
       body: formdata,
     })
       .then((response) => response.text())
       .then((result) => console.log(result))
+      .then(() => SendTextBoxRequest())
+      .then(() => {SendPhoneNumbers();setIsLoading(false)})
       .catch((error) => console.error(error));
   };
 
@@ -550,8 +547,6 @@ function App() {
     <>
       <nav className="h-[70px] w-full"></nav>
       <div className="w-full bg-white   flex">
-
-
         <div className="flex w-screen bg-slate-100 h-screen">
           <div className="relative bg-slate-100 flex flex-1 flex-col items-center   ">
             <div className="absolute top-2 z-10   px-3 py-1 flex  rounded-lg justify-center gap-2">
@@ -565,7 +560,9 @@ function App() {
                   {selectedDiv && (
                     <SketchPicker
                       color={selectedDiv.fontColor}
-                      onChange={(color) => handleColorChange(selectedDiv.id, color)}
+                      onChange={(color) =>
+                        handleColorChange(selectedDiv.id, color)
+                      }
                     />
                   )}
                 </DropdownMenuContent>
@@ -632,7 +629,10 @@ function App() {
                 </Toggle>
               </div>
             </div>
-            <div className="parent shadow-xl rounded-md mx-auto mt-[4.5rem]" ref={parentRef}>
+            <div
+              className="parent shadow-xl rounded-md mx-auto mt-[4.5rem]"
+              ref={parentRef}
+            >
               {divs.map((div) => {
                 if (div.active) {
                   return (
@@ -672,7 +672,9 @@ function App() {
                           onClick={() => {
                             setDivs(
                               divs.map((d) =>
-                                d.id === div.id ? { ...d, active: !d.active } : d
+                                d.id === div.id
+                                  ? { ...d, active: !d.active }
+                                  : d
                               )
                             );
                           }}
@@ -720,26 +722,22 @@ function App() {
                       </TableBody>
                     </Table>
                     {items.length > 0 && (
-                      <DND items={items} key={1} handleDragEnd={handleDragEnd} />
+                      <DND
+                        items={items}
+                        key={1}
+                        handleDragEnd={handleDragEnd}
+                      />
                     )}
                   </div>
                 </div>
               )}
             </div>
             <div className=" bottom-10 z-10 bg-white p-4   rounded-lg ">
-
               <div>
                 <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
                   Poster Panel
                 </h2>
-                <input type="file" onChange={handleImgFileChange}/ >
-                
-                <button
-                  onClick={handleFinalSubmit}
-                  className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
-                >
-                  Upload
-                </button>
+                <input type="file" onChange={handleImgFileChange} />
               </div>
               {/* <button
           onClick={UpdateTextbox}
@@ -755,8 +753,8 @@ function App() {
                   <DialogHeader>
                     <DialogTitle>Edit Phone Number </DialogTitle>
                     <DialogDescription>
-                      Make changes to your phone number here. Click save when you're
-                      done.
+                      Make changes to your phone number here. Click save when
+                      you're done.
                     </DialogDescription>
                   </DialogHeader>
                   <div className="grid gap-4 py-4">
@@ -796,64 +794,72 @@ function App() {
                   </DialogFooter>
                 </DialogContent>
               </Dialog>
-
-              <button
-                onClick={() => {
-                  setTimeout(() => { }, 500);
-                  SendTextBoxRequest();
-                }}
-                className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
-              >
-                Send Textbox Data
-              </button>
               <Dialog>
                 <DialogTrigger>
                   <button
-                    onClick={SendPhoneNumbers}
+                    onClick={handleFinalSubmit}
                     className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
                   >
-                    Share
+                    Upload
                   </button>
                 </DialogTrigger>
                 <DialogContent>
-                  <DialogHeader>
+                  <DialogHeader className="h-[10rem] grid place-content-center">
                     <DialogTitle>Check your telegram for OTP </DialogTitle>
-                    <DialogDescription>
-                      We have sent you OTP on your Telegram App. Enter it here for
-                      sharingm the posters.
+                    <DialogDescription className="">
+                    {isLoading ? (
+                   <LoadingOverlay
+                   active={true}
+                   styles={{
+                    height : "full",
+                     spinner: (base:any) => ({
+                       ...base,
+                       width: '50px',
+                       '& svg circle': {
+                         stroke: 'rgba(0, 0, 0, 1)'
+                       }
+                     })
+                   }}
+                 >
+   
+                 </LoadingOverlay>
+                  ) :"We have sent you OTP on your Telegram App. Enter it here for sharing the posters."}
                     </DialogDescription>
                   </DialogHeader>
-                  <InputOTP
-                    maxLength={5}
-                    value={otp}
-                    onChange={(value) => {
-                      console.log(otp);
-                      setOtp(value);
-                    }}
-                  >
-                    <InputOTPGroup>
-                      <InputOTPSlot index={0} />
-                      <InputOTPSlot index={1} />
-                      <InputOTPSlot index={2} />
-                      <InputOTPSlot index={3} />
-                      <InputOTPSlot index={4} />
-                    </InputOTPGroup>
-                  </InputOTP>
+                   {!isLoading?(
+                    <InputOTP
+                      maxLength={5}
+                      value={otp}
+                      onChange={(value) => {
+                        console.log(otp);
+                        setOtp(value);
+                      }}
+                    >
+                      <InputOTPGroup>
+                        <InputOTPSlot index={0} />
+                        <InputOTPSlot index={1} />
+                        <InputOTPSlot index={2} />
+                        <InputOTPSlot index={3} />
+                        <InputOTPSlot index={4} />
+                      </InputOTPGroup>
+                    </InputOTP>
+                  ):""}
+
                   <DialogClose>
-                    <Button
+                    {!isLoading?<Button
                       onClick={() => {
                         SendOTP();
                       }}
                       className="otp-submit-button"
                     >
                       Submit
-                    </Button>
+                    </Button>:""}
+                    
                   </DialogClose>
                 </DialogContent>
               </Dialog>
             </div>
           </div>
-
         </div>
       </div>
     </>
