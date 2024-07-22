@@ -150,9 +150,8 @@ const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
 
   return (
     <Rnd
-      className={`bg-slate-400 opacity-50 border-2 border-darkblue flex justify-start items-start cursor-move ${
-        isSelected ? "active" : ""
-      } `}
+      className={`bg-slate-400 opacity-50 border-2 border-darkblue flex justify-start items-start cursor-move ${isSelected ? "active" : ""
+        } `}
       size={{ width: size.width, height: size.height }}
       position={{ x: position.x, y: position.y }}
       onDragStop={(_: any, d: any) => onUpdate(id, { x: d.x, y: d.y }, size)}
@@ -548,308 +547,316 @@ function App() {
   };
 
   return (
-    <div className="w-full bg-white h-screen py-4 ">
-      <div className="fixed z-10 bg-black w-[70vw] py-3 flex ml-[10%] rounded-lg justify-center gap-10">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">Color</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Color</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            {selectedDiv && (
-              <SketchPicker
-                color={selectedDiv.fontColor}
-                onChange={(color) => handleColorChange(selectedDiv.id, color)}
+    <>
+      <nav className="h-[70px] w-full"></nav>
+      <div className="w-full bg-white   flex">
+
+
+        <div className="flex w-screen bg-slate-100 h-screen">
+          <div className="relative bg-slate-100 flex flex-1 flex-col items-center   ">
+            <div className="absolute top-2 z-10   px-3 py-1 flex  rounded-lg justify-center gap-2">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">Color</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuLabel>Color</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  {selectedDiv && (
+                    <SketchPicker
+                      color={selectedDiv.fontColor}
+                      onChange={(color) => handleColorChange(selectedDiv.id, color)}
+                    />
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">Font</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-56">
+                  <DropdownMenuLabel>Font name</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuRadioGroup value={selectedDiv?.fontFamily}>
+                    <DropdownMenuRadioItem
+                      value="Roboto"
+                      onClick={() => {
+                        setDivs(
+                          divs.map((div) =>
+                            div.id === selectedDiv?.id
+                              ? { ...div, fontFamily: "Roboto" }
+                              : div
+                          )
+                        );
+                      }}
+                    >
+                      Roboto
+                    </DropdownMenuRadioItem>
+                    <DropdownMenuRadioItem
+                      value="Poppins"
+                      onClick={() => {
+                        setDivs(
+                          divs.map((div) =>
+                            div.id === selectedDiv?.id
+                              ? { ...div, fontFamily: "Poppins" }
+                              : div
+                          )
+                        );
+                      }}
+                    >
+                      Poppins
+                    </DropdownMenuRadioItem>
+                  </DropdownMenuRadioGroup>
+                </DropdownMenuContent>
+              </DropdownMenu>
+              <div className="flex justify-between gap-4">
+                <Toggle
+                  value="bold"
+                  onClick={() => {
+                    handleBoldChange(selectedDiv?.id);
+                  }}
+                  aria-label="Toggle bold"
+                  className="bg-black text-white border-2 border-white "
+                >
+                  <Bold className="h-4 w-4 " />
+                </Toggle>
+                <Toggle
+                  value="italic"
+                  onClick={() => {
+                    handleItalicChange(selectedDiv?.id);
+                  }}
+                  aria-label="Toggle italic"
+                  className="bg-black text-white border-2 border-white "
+                >
+                  <Italic className="h-4 w-4" />
+                </Toggle>
+              </div>
+            </div>
+            <div className="parent shadow-xl rounded-md mx-auto mt-[4.5rem]" ref={parentRef}>
+              {divs.map((div) => {
+                if (div.active) {
+                  return (
+                    <DraggableResizableDiv
+                      isImage={div.isImage}
+                      key={div.id}
+                      id={div.id}
+                      position={div.position}
+                      size={div.size}
+                      onUpdate={updateDiv}
+                      name={div.header}
+                      fontFamily={div.fontFamily}
+                      fontColor={div.fontColor}
+                      onClick={() => {
+                        setSelectedDiv(div);
+                      }}
+                      isSelected={div.id === selectedDiv?.id}
+                      isBold={div.isBold}
+                      isItalic={div.isItalic}
+                    />
+                  );
+                }
+
+                return null;
+              })}
+            </div>
+
+            <Table>
+              <TableBody>
+                <TableRow>
+                  {divs.map((div) => (
+                    <TableCell key={div.id}>
+                      <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
+                        {div.header + "  "}
+                        <Switch
+                          defaultChecked={true}
+                          onClick={() => {
+                            setDivs(
+                              divs.map((d) =>
+                                d.id === div.id ? { ...d, active: !d.active } : d
+                              )
+                            );
+                          }}
+                        />
+                      </h3>
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+          <div className="flex-1 relative  flex flex-col items-center  gap-4 px-6">
+            <div className="absolute top-2  flex justify-center gap-4  w-[400px] ">
+              <Input
+                type="file"
+                accept=".csv"
+                className="m-2 size-min shadow-sm border border-black"
+                onChange={handleFileChange}
               />
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline">Font</Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent className="w-56">
-            <DropdownMenuLabel>Font name</DropdownMenuLabel>
-            <DropdownMenuSeparator />
-            <DropdownMenuRadioGroup value={selectedDiv?.fontFamily}>
-              <DropdownMenuRadioItem
-                value="Roboto"
-                onClick={() => {
-                  setDivs(
-                    divs.map((div) =>
-                      div.id === selectedDiv?.id
-                        ? { ...div, fontFamily: "Roboto" }
-                        : div
-                    )
-                  );
-                }}
-              >
-                Roboto
-              </DropdownMenuRadioItem>
-              <DropdownMenuRadioItem
-                value="Poppins"
-                onClick={() => {
-                  setDivs(
-                    divs.map((div) =>
-                      div.id === selectedDiv?.id
-                        ? { ...div, fontFamily: "Poppins" }
-                        : div
-                    )
-                  );
-                }}
-              >
-                Poppins
-              </DropdownMenuRadioItem>
-            </DropdownMenuRadioGroup>
-          </DropdownMenuContent>
-        </DropdownMenu>
-        <div className="flex justify-between gap-4">
-          <Toggle
-            value="bold"
-            onClick={() => {
-              handleBoldChange(selectedDiv?.id);
-            }}
-            aria-label="Toggle bold"
-            className="bg-black text-white border-2 border-white "
-          >
-            <Bold className="h-4 w-4 " />
-          </Toggle>
-          <Toggle
-            value="italic"
-            onClick={() => {
-              handleItalicChange(selectedDiv?.id);
-            }}
-            aria-label="Toggle italic"
-            className="bg-black text-white border-2 border-white "
-          >
-            <Italic className="h-4 w-4" />
-          </Toggle>
-        </div>
-      </div>
-      <div className="fixed z-10 bg-white p-4 mt-[70vh] ml-[20vw] rounded-lg border-2 border-black">
-        <div>
-          <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
-            Poster Panel
-          </h2>
-          <input type="file" onChange={handleImgFileChange} />
-          <button
-            onClick={handleFinalSubmit}
-            className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
-          >
-            Upload
-          </button>
-        </div>
-        {/* <button
+              <Button onClick={handleSubmit}>Upload</Button>
+            </div>
+            <div className="rounded-md shadow-xl h-[400px] bg-white w-full mt-16  p-4 flex">
+              {data.length > 0 && (
+                <div className="overflow-y-scroll">
+                  <div className="flex ">
+                    {" "}
+                    <Table>
+                      <TableHeader className="">
+                        <TableRow>
+                          {Object.keys(data[0]).map((key) => (
+                            <TableHead key={key} className="w-[100px]">
+                              {key}
+                            </TableHead>
+                          ))}
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {data.map((row, index) => (
+                          <TableRow key={index} className="h-[60px]">
+                            {Object.values(row).map((val, i) => (
+                              <TableCell key={i}>{val}</TableCell>
+                            ))}
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {items.length > 0 && (
+                      <DND items={items} key={1} handleDragEnd={handleDragEnd} />
+                    )}
+                  </div>
+                </div>
+              )}
+            </div>
+            <div className=" bottom-10 z-10 bg-white p-4   rounded-lg ">
+
+              <div>
+                <h2 className="scroll-m-20 border-b pb-2 text-3xl font-semibold tracking-tight first:mt-0">
+                  Poster Panel
+                </h2>
+                <input type="file" onChange={handleImgFileChange}/ >
+                
+                <button
+                  onClick={handleFinalSubmit}
+                  className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
+                >
+                  Upload
+                </button>
+              </div>
+              {/* <button
           onClick={UpdateTextbox}
           className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2"
         >
           Log Data
         </button> */}
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button variant="outline">Edit Phonenumber</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Edit Phone Number </DialogTitle>
-              <DialogDescription>
-                Make changes to your phone number here. Click save when you're
-                done.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="grid gap-4 py-4">
-              <div className="grid grid-cols-4 items-center gap-4">
-                <InputOTP
-                  maxLength={10}
-                  value={phone}
-                  onChange={(val) => setPhone(val)}
-                >
-                  <InputOTPGroup>
-                    <InputOTPSlot index={0} />
-                    <InputOTPSlot index={1} />
-                    <InputOTPSlot index={2} />
-                  </InputOTPGroup>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={3} />
-                    <InputOTPSlot index={4} />
-                    <InputOTPSlot index={5} />
-                  </InputOTPGroup>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={6} />
-                    <InputOTPSlot index={7} />
-                    <InputOTPSlot index={8} />
-                  </InputOTPGroup>
-                  <InputOTPGroup>
-                    <InputOTPSlot index={9} />
-                  </InputOTPGroup>
-                </InputOTP>
-              </div>
-            </div>
-            <DialogFooter>
-              <DialogClose>
-                <Button type="submit" onClick={() => console.log(phone)}>
-                  Save changes
-                </Button>
-              </DialogClose>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button variant="outline">Edit Phonenumber</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-[425px]">
+                  <DialogHeader>
+                    <DialogTitle>Edit Phone Number </DialogTitle>
+                    <DialogDescription>
+                      Make changes to your phone number here. Click save when you're
+                      done.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                      <InputOTP
+                        maxLength={10}
+                        value={phone}
+                        onChange={(val) => setPhone(val)}
+                      >
+                        <InputOTPGroup>
+                          <InputOTPSlot index={0} />
+                          <InputOTPSlot index={1} />
+                          <InputOTPSlot index={2} />
+                        </InputOTPGroup>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={3} />
+                          <InputOTPSlot index={4} />
+                          <InputOTPSlot index={5} />
+                        </InputOTPGroup>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={6} />
+                          <InputOTPSlot index={7} />
+                          <InputOTPSlot index={8} />
+                        </InputOTPGroup>
+                        <InputOTPGroup>
+                          <InputOTPSlot index={9} />
+                        </InputOTPGroup>
+                      </InputOTP>
+                    </div>
+                  </div>
+                  <DialogFooter>
+                    <DialogClose>
+                      <Button type="submit" onClick={() => console.log(phone)}>
+                        Save changes
+                      </Button>
+                    </DialogClose>
+                  </DialogFooter>
+                </DialogContent>
+              </Dialog>
 
-        <button
-          onClick={() => {
-            setTimeout(() => {}, 500);
-            SendTextBoxRequest();
-          }}
-          className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
-        >
-          Send Textbox Data
-        </button>
-        <Dialog>
-          <DialogTrigger>
-            <button
-              onClick={SendPhoneNumbers}
-              className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
-            >
-              Share
-            </button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Check your telegram for OTP </DialogTitle>
-              <DialogDescription>
-                We have sent you OTP on your Telegram App. Enter it here for
-                sharingm the posters.
-              </DialogDescription>
-            </DialogHeader>
-            <InputOTP
-              maxLength={5}
-              value={otp}
-              onChange={(value) => {
-                console.log(otp);
-                setOtp(value);
-              }}
-            >
-              <InputOTPGroup>
-                <InputOTPSlot index={0} />
-                <InputOTPSlot index={1} />
-                <InputOTPSlot index={2} />
-                <InputOTPSlot index={3} />
-                <InputOTPSlot index={4} />
-              </InputOTPGroup>
-            </InputOTP>
-            <DialogClose>
-              <Button
+              <button
                 onClick={() => {
-                  SendOTP();
+                  setTimeout(() => { }, 500);
+                  SendTextBoxRequest();
                 }}
-                className="otp-submit-button"
+                className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
               >
-                Submit
-              </Button>
-            </DialogClose>
-          </DialogContent>
-        </Dialog>
-      </div>
-      <div className="flex w-full bg-black">
-        <div className="flex-1 bg-blue-600 ">
-          <div className="parent" ref={parentRef}>
-            {divs.map((div) => {
-              if (div.active) {
-                return (
-                  <DraggableResizableDiv
-                    isImage={div.isImage}
-                    key={div.id}
-                    id={div.id}
-                    position={div.position}
-                    size={div.size}
-                    onUpdate={updateDiv}
-                    name={div.header}
-                    fontFamily={div.fontFamily}
-                    fontColor={div.fontColor}
-                    onClick={() => {
-                      setSelectedDiv(div);
+                Send Textbox Data
+              </button>
+              <Dialog>
+                <DialogTrigger>
+                  <button
+                    onClick={SendPhoneNumbers}
+                    className="bordder bg-black rounded-md text-white font-semibold mt-2 p-2 ml-2"
+                  >
+                    Share
+                  </button>
+                </DialogTrigger>
+                <DialogContent>
+                  <DialogHeader>
+                    <DialogTitle>Check your telegram for OTP </DialogTitle>
+                    <DialogDescription>
+                      We have sent you OTP on your Telegram App. Enter it here for
+                      sharingm the posters.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <InputOTP
+                    maxLength={5}
+                    value={otp}
+                    onChange={(value) => {
+                      console.log(otp);
+                      setOtp(value);
                     }}
-                    isSelected={div.id === selectedDiv?.id}
-                    isBold={div.isBold}
-                    isItalic={div.isItalic}
-                  />
-                );
-              }
-
-              return null;
-            })}
+                  >
+                    <InputOTPGroup>
+                      <InputOTPSlot index={0} />
+                      <InputOTPSlot index={1} />
+                      <InputOTPSlot index={2} />
+                      <InputOTPSlot index={3} />
+                      <InputOTPSlot index={4} />
+                    </InputOTPGroup>
+                  </InputOTP>
+                  <DialogClose>
+                    <Button
+                      onClick={() => {
+                        SendOTP();
+                      }}
+                      className="otp-submit-button"
+                    >
+                      Submit
+                    </Button>
+                  </DialogClose>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
 
-          <Table>
-            <TableBody>
-              <TableRow>
-                {divs.map((div) => (
-                  <TableCell key={div.id}>
-                    <h3 className="scroll-m-20 text-2xl font-semibold tracking-tight">
-                      {div.header + "  "}
-                      <Switch
-                        defaultChecked={true}
-                        onClick={() => {
-                          setDivs(
-                            divs.map((d) =>
-                              d.id === div.id ? { ...d, active: !d.active } : d
-                            )
-                          );
-                        }}
-                      />
-                    </h3>
-                  </TableCell>
-                ))}
-              </TableRow>
-            </TableBody>
-          </Table>
-        </div>
-        <div className="flex-1 bg-red-500">
-          <div className="flex justify-center gap-4 bg-slate-500 py-4 mt-16">
-            <Input
-              type="file"
-              accept=".csv"
-              className="m-2 size-min"
-              onChange={handleFileChange}
-            />
-            <button onClick={handleSubmit}>Upload</button>
-          </div>
-          <div className="bg-white h-[100vh] p-4 flex">
-            {data.length > 0 && (
-              <div className="overflow-y-scroll">
-                <div className="flex ">
-                  {" "}
-                  <Table>
-                    <TableHeader className="">
-                      <TableRow>
-                        {Object.keys(data[0]).map((key) => (
-                          <TableHead key={key} className="w-[100px]">
-                            {key}
-                          </TableHead>
-                        ))}
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {data.map((row, index) => (
-                        <TableRow key={index} className="h-[60px]">
-                          {Object.values(row).map((val, i) => (
-                            <TableCell key={i}>{val}</TableCell>
-                          ))}
-                        </TableRow>
-                      ))}
-                    </TableBody>
-                  </Table>
-                  {items.length > 0 && (
-                    <DND items={items} key={1} handleDragEnd={handleDragEnd} />
-                  )}
-                </div>
-              </div>
-            )}
-          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }
 
