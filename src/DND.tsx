@@ -8,7 +8,6 @@ import {
 } from "@dnd-kit/core";
 
 import {
-  arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   verticalListSortingStrategy,
@@ -18,15 +17,12 @@ import {
   restrictToVerticalAxis,
   restrictToParentElement,
 } from "@dnd-kit/modifiers";
-import { FC, useState } from "react";
+import { FC } from "react";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
-  CardTitle,
 } from "./components/ui/card";
-import { AddNewItem } from "./components/AddNewItem";
 import SortableLinks from "./components/SortableLinks";
 
 interface Item {
