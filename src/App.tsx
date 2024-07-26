@@ -1,5 +1,5 @@
 import "./App.css";
-import { Bold, Italic, Underline, User, User2 } from "lucide-react";
+import { Bold, Italic, User2 } from "lucide-react";
 import { Input } from "./components/ui/input";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import Papa from "papaparse";
@@ -11,7 +11,7 @@ import {
   TableHeader,
   TableRow,
 } from "../src/components/ui/table";
-import { AddNewItem } from "./components/AddNewItem";
+
 import { Rnd } from "react-rnd";
 import { SketchPicker, ColorResult, RGBColor } from "react-color";
 import {
@@ -27,7 +27,6 @@ import {
 import {
   InputOTP,
   InputOTPGroup,
-  InputOTPSeparator,
   InputOTPSlot,
 } from "./components/ui/input-otp";
 import { Button } from "./components/ui/button";
@@ -41,9 +40,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "./components/ui/dropdown-menu";
-import { ToggleGroup, ToggleGroupItem } from "./components/ui/toggle-group";
+
 import { Toggle } from "./components/ui/toggle";
-import { Label } from "./components/ui/label";
+
 import DND from "./DND";
 import { arrayMove } from "@dnd-kit/sortable";
 import LoadingOverlay from "react-loading-overlay-ts";
@@ -127,11 +126,6 @@ interface Item {
   id: number;
 }
 
-interface conversionRate {
-  x: number;
-  y: number;
-}
-
 const DraggableResizableDiv: React.FC<DraggableResizableDivProps> = ({
   id,
   position,
@@ -207,7 +201,7 @@ function App() {
   const [pixelCR, setPixelCR] = useState({ x: 1, y: 1 });
   const [isLoading, setIsLoading] = useState(false);
   const [phone, setPhone] = useState("");
-  const baseURL ="http://localhost:8080"
+  const baseURL = "http://localhost:8080";
   // const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   setOtp(e.target.value);
   // };
@@ -228,7 +222,7 @@ function App() {
   };
 
   const SendOTP = () => {
-    fetch(baseURL+"/share", {
+    fetch(baseURL + "/share", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -241,7 +235,8 @@ function App() {
   };
 
   const UpdateTextbox = () => {
-    const textBoxes = divs
+    const activeDivs = divs.filter((div) => div.active);
+    const textBoxes = activeDivs
       .filter((div) => div.active && div.isImage === false)
       .map((div) => {
         return {
@@ -294,7 +289,7 @@ function App() {
   const SendTextBoxRequest = async () => {
     let req = JSON.stringify(varContent);
     console.log("Before sending", req);
-    const response = await fetch(baseURL+"/sendTextBoxes", {
+    const response = await fetch(baseURL + "/sendTextBoxes", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -307,7 +302,7 @@ function App() {
   };
 
   const SendPhoneNumbers = async () => {
-    const response = await fetch(baseURL+"/initAuth", {
+    const response = await fetch(baseURL + "/initAuth", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
@@ -398,19 +393,18 @@ function App() {
 
     const formdata = new FormData();
     formdata.append("image", selectedFile);
-    console.log("Hi man");
-    fetch(baseURL+"/ping")
-      .then((res) => res.text())
-      .then((data) => console.log(data))
-      .catch((err) => console.error(err));
-    fetch(baseURL+"/uploadImage", {
+
+    fetch(baseURL + "/uploadImage", {
       method: "POST",
       body: formdata,
     })
       .then((response) => response.text())
       .then((result) => console.log(result))
       .then(() => SendTextBoxRequest())
-      .then(() => {SendPhoneNumbers();setIsLoading(false)})
+      .then(() => {
+        SendPhoneNumbers();
+        setIsLoading(false);
+      })
       .catch((error) => console.error(error));
   };
 
@@ -445,7 +439,10 @@ function App() {
   }, [phoneNumbers]);
 
   useEffect(() => {
-    if (varContent) {
+    if (
+      varContent.VarTextBoxes.length > 0 ||
+      varContent.VarImageBoxes.length > 0
+    ) {
       console.log("VarContent", varContent);
     }
   }, [varContent]);
@@ -455,37 +452,20 @@ function App() {
 
     const extractedPhoneNumbers: string[] = [];
 
-    setDivs((prevDivs) => [
-      ...prevDivs,
-      ...keys.map((key) => {
-        const info = data.map((d) => d[key]);
+    const newDivs = keys.map((key) => {
+      const info = data.map((d) => d[key]);
 
-        // Check if the key matches any phone header variation
-        const isPhoneHeader = phoneHeaders.some((header) =>
-          key.toLowerCase().includes(header)
-        );
+      // Check if the key matches any phone header variation
+      const isPhoneHeader = phoneHeaders.some((header) =>
+        key.toLowerCase().includes(header)
+      );
 
-        // If it's a phone header, extract numbers
-        if (isPhoneHeader) {
-          extractedPhoneNumbers.push(...info);
-        }
+      // If it's a phone header, extract numbers
+      if (isPhoneHeader) {
+        extractedPhoneNumbers.push(...info);
+      }
 
-        if (key.toLowerCase().includes("img")) {
-          return {
-            id: key,
-            position: { x: 0, y: 0 },
-            header: key,
-            size: { width: 150, height: 50 },
-            active: true,
-            fontFamily: "Roboto",
-            fontColor: { r: 0, g: 0, b: 0, a: 255 },
-            info: info,
-            isBold: false,
-            isItalic: false,
-            isImage: true,
-          };
-        }
-
+      if (key.toLowerCase().includes("img")) {
         return {
           id: key,
           position: { x: 0, y: 0 },
@@ -497,19 +477,40 @@ function App() {
           info: info,
           isBold: false,
           isItalic: false,
-          isImage: false,
+          isImage: true,
         };
-      }),
-    ]);
+      }
+
+      return {
+        id: key,
+        position: { x: 0, y: 0 },
+        header: key,
+        size: { width: 150, height: 50 },
+        active: true,
+        fontFamily: "Roboto",
+        fontColor: { r: 0, g: 0, b: 0, a: 255 },
+        info: info,
+        isBold: false,
+        isItalic: false,
+        isImage: false,
+      };
+    });
+
+    setDivs((prevDivs) => [...prevDivs, ...newDivs]);
 
     // Update the state with extracted phone numbers
     setPhoneNumbers(extractedPhoneNumbers);
-    UpdateTextbox();
   };
 
   useEffect(() => {
+    if (divs.length > 0) {
+      UpdateTextbox();
+    }
+  }, [divs]);
+
+  useEffect(() => {
     if (divs.length) {
-      console.log(divs);
+      console.log("DIVS", divs);
     }
   }, [divs]);
 
@@ -698,25 +699,33 @@ function App() {
             </div>
             <div className="rounded-md shadow-xl h-[400px] bg-white w-full mt-16  p-4 flex">
               {data.length > 0 && (
-                <div className="overflow-y-scroll">
-                  <div className="flex ">
+                <div className="overflow-y-scroll overflow-x-scroll w-full">
+                  <div className="flex w-full">
                     {" "}
                     <Table>
                       <TableHeader className="">
                         <TableRow>
-                          {Object.keys(data[0]).map((key) => (
-                            <TableHead key={key} className="w-[100px]">
-                              {key}
-                            </TableHead>
-                          ))}
+                          {Object.keys(data[0])
+                            .filter((key) => !key.toLowerCase().includes("img"))
+                            .map((key) => {
+                              return (
+                                <TableHead key={key} className="w-[100px]">
+                                  {key}
+                                </TableHead>
+                              );
+                            })}
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {data.map((row, index) => (
                           <TableRow key={index} className="h-[60px]">
-                            {Object.values(row).map((val, i) => (
-                              <TableCell key={i}>{val}</TableCell>
-                            ))}
+                            {Object.entries(row)
+                              .filter(
+                                ([key]) => !key.toLowerCase().includes("img")
+                              )
+                              .map(([_, val], i) => (
+                                <TableCell key={i}>{val}</TableCell>
+                              ))}
                           </TableRow>
                         ))}
                       </TableBody>
@@ -807,26 +816,25 @@ function App() {
                   <DialogHeader className="h-[10rem] grid place-content-center">
                     <DialogTitle>Check your telegram for OTP </DialogTitle>
                     <DialogDescription className="">
-                    {isLoading ? (
-                   <LoadingOverlay
-                   active={true}
-                   styles={{
-                    height : "full",
-                     spinner: (base:any) => ({
-                       ...base,
-                       width: '50px',
-                       '& svg circle': {
-                         stroke: 'rgba(0, 0, 0, 1)'
-                       }
-                     })
-                   }}
-                 >
-   
-                 </LoadingOverlay>
-                  ) :"We have sent you OTP on your Telegram App. Enter it here for sharing the posters."}
+                      {isLoading ? (
+                        <LoadingOverlay
+                          active={true}
+                          styles={{
+                            spinner: (base: any) => ({
+                              ...base,
+                              width: "50px",
+                              "& svg circle": {
+                                stroke: "rgba(0, 0, 0, 1)",
+                              },
+                            }),
+                          }}
+                        ></LoadingOverlay>
+                      ) : (
+                        "We have sent you OTP on your Telegram App. Enter it here for sharing the posters."
+                      )}
                     </DialogDescription>
                   </DialogHeader>
-                   {!isLoading?(
+                  {!isLoading ? (
                     <InputOTP
                       maxLength={5}
                       value={otp}
@@ -843,18 +851,23 @@ function App() {
                         <InputOTPSlot index={4} />
                       </InputOTPGroup>
                     </InputOTP>
-                  ):""}
+                  ) : (
+                    ""
+                  )}
 
                   <DialogClose>
-                    {!isLoading?<Button
-                      onClick={() => {
-                        SendOTP();
-                      }}
-                      className="otp-submit-button"
-                    >
-                      Submit
-                    </Button>:""}
-                    
+                    {!isLoading ? (
+                      <Button
+                        onClick={() => {
+                          SendOTP();
+                        }}
+                        className="otp-submit-button"
+                      >
+                        Submit
+                      </Button>
+                    ) : (
+                      ""
+                    )}
                   </DialogClose>
                 </DialogContent>
               </Dialog>
