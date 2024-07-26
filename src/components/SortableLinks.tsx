@@ -23,8 +23,8 @@ const SortableLinks: FC<SortableLinkCardProps> = ({ id }) => {
 
   return (
     <div ref={setNodeRef} style={style} className="mt-1">
-      <Card className="py-2 px-2 mb-4 relative flex justify-between gap-5 group border-none shadow-none border-b-2">
-        <div>{id.name}</div>
+      <Card className="py-2 px-2 mb-4 relative flex justify-between gap-5 group border-none shadow-none rounded-none">
+        <div><a href={id.name} className=" underline">View Image</a></div>
         <div className="flex justify-center items-center gap-4">
           <button
             {...attributes}

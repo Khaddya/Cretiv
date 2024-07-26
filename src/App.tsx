@@ -412,7 +412,6 @@ function App() {
     if (data.length) {
       console.log(data);
 
-      console.log("CLICKED AGAGAGAA");
       const keys = Object.keys(data[0]);
       ClickSubmit(keys, data);
       let itemsArray: Item[] = [];
@@ -424,8 +423,6 @@ function App() {
           });
         }
       });
-      console.log("Items Array", itemsArray);
-      itemsArray.pop();
 
       setItems(itemsArray);
     }
@@ -701,10 +698,10 @@ function App() {
             </div>
             <div className="rounded-md shadow-xl h-[400px] bg-white w-full mt-16  p-4 flex">
               {data.length > 0 && (
-                <div className="overflow-y-scroll overflow-x-scroll w-full">
+                <div className="overflow-y-scroll overflow-x-scroll w-[50vw]">
                   <div className="flex w-full">
                     {" "}
-                    <Table>
+                    <Table className="">
                       <TableHeader className="">
                         <TableRow>
                           {Object.keys(data[0])
@@ -734,6 +731,7 @@ function App() {
                     </Table>
                     {items.length > 0 && (
                       <DND
+                      
                         items={items}
                         key={1}
                         handleDragEnd={handleDragEnd}

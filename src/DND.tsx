@@ -50,7 +50,7 @@ const DND: FC<DNDProps> = ({ items, handleDragEnd }) => {
 
   return (
     <main className="flex items-start  select-none">
-      <Card className="w-full py-1">
+      <Card className="w-[10vw] py-1 border-none">
         <CardHeader className="">Img</CardHeader>
         <CardContent className="grid p-0">
           <DndContext
