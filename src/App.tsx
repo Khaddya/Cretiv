@@ -1,5 +1,5 @@
 import "./App.css";
-import { Bold, Italic, User2 } from "lucide-react";
+import { Binary, Bold, Italic, User2 } from "lucide-react";
 import { Input } from "./components/ui/input";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import Papa from "papaparse";
@@ -46,6 +46,8 @@ import { Toggle } from "./components/ui/toggle";
 import DND from "./DND";
 import { arrayMove } from "@dnd-kit/sortable";
 import LoadingOverlay from "react-loading-overlay-ts";
+import { buffer } from "stream/consumers";
+import { useToast } from "./components/ui/use-toast";
 interface ParsedData {
   [key: string]: string;
 }
@@ -199,15 +201,122 @@ function App() {
   const [otp, setOtp] = useState("");
   const [aspectRatio, setAspectRatio] = useState(1);
   const [pixelCR, setPixelCR] = useState({ x: 1, y: 1 });
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [phone, setPhone] = useState("");
-  const baseURL = "http://localhost:8080";
+  const [sendData, setSendData] = useState(false);
+
+  const { toast } = useToast();
   // const handleOTPChange = (e: React.ChangeEvent<HTMLInputElement>) => {
   //   setOtp(e.target.value);
   // };
 
-  const [items, setItems] = useState<Item[]>([]);
+  const [conn, setConn] = useState<WebSocket | null>(null);
 
+  const [isConnected, setIsConnected] = useState(false);
+  useEffect(() => {
+    const connectWebSocket = () => {
+      const ws = new WebSocket("ws://localhost:8080/ws");
+
+      ws.onopen = () => {
+        console.log("Connected to WebSocket server");
+        setIsConnected(true);
+        setConn(ws);
+      };
+
+      ws.onclose = () => {
+        console.log("Disconnected from WebSocket server");
+        setIsConnected(false);
+      };
+
+      ws.onerror = (error) => {
+        console.error("WebSocket error:", error);
+        setIsConnected(false);
+      };
+      ws.addEventListener("message", (event) => {
+        const message = event.data;
+
+        // Check if the message is a string and matches "please enter otp"
+        if (typeof message === "string" && message === "Please send otp") {
+          setIsLoading(false);
+        }else if(typeof message === "string" && message === "Successfully sent the images") {
+          toast({variant:"default","title":"Successfully send the images"})
+        }else if(typeof message === "string" && message === "Error sending images"){
+          toast({variant:"destructive","title":"Error sending the images."})
+        } 
+        else {
+          console.log("Received message:", message);
+        }
+      });
+
+      return () => {
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.close();
+        }
+      };
+    };
+
+    connectWebSocket();
+  }, []);
+
+  function sendArrayBuffer(arrayBuffer: ArrayBuffer) {
+    // Convert ArrayBuffer to Uint8Array
+    const uint8Array = new Uint8Array(arrayBuffer);
+
+    // Check if WebSocket is open
+    if (conn?.readyState === WebSocket.OPEN) {
+      console.log("Sending binary data:", uint8Array);
+      conn?.send(uint8Array);
+    } else {
+      console.log("WebSocket not open, waiting for open event...");
+      conn?.addEventListener("open", () => {
+        console.log("WebSocket opened. Sending binary data:", uint8Array);
+        conn.send(uint8Array);
+      });
+    }
+  }
+  const sendJSON = (data: any) => {
+    if (!conn || !isConnected) return;
+
+    try {
+      const jsonData = JSON.stringify(data);
+      conn.send(jsonData);
+      console.log("JSON data sent successfully");
+    } catch (error) {
+      console.error("Error sending JSON data:", error);
+    }
+  };
+
+  const sendOTP = (otp: string) => {
+    if (!conn || !isConnected) return;
+
+    try {
+      conn.send(otp);
+      console.log("OTP sent successfully");
+    } catch (error) {
+      console.error("Error sending OTP:", error);
+    }
+  };
+
+  useEffect(() => {
+    if (conn && isConnected && selectedFile) {
+      selectedFile
+        .arrayBuffer()
+        .then((buf) => {
+          sendArrayBuffer(buf);
+        })
+        .then(() => {
+          sendJSON(varContent);
+        })
+        .then(() =>
+          sendJSON({
+            contacts: Array.from(new Set(phoneNumbers)),
+            phone: "+91" + phone,
+          })
+        );
+    }
+  }, [sendData]);
+
+  const [items, setItems] = useState<Item[]>([]);
   const handleDragEnd = (event: any) => {
     const { active, over } = event;
 
@@ -219,19 +328,6 @@ function App() {
         return arrayMove(prevItems, oldIndex, newIndex);
       });
     }
-  };
-
-  const SendOTP = () => {
-    fetch(baseURL + "/share", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ otp }),
-    })
-      .then((response) => response.json())
-      .then((data) => console.log(data))
-      .catch((error) => console.error(error));
   };
 
   const UpdateTextbox = () => {
@@ -284,36 +380,6 @@ function App() {
     };
 
     setVarContent(updatedData);
-  };
-
-  const SendTextBoxRequest = async () => {
-    let req = JSON.stringify(varContent);
-    console.log("Before sending", req);
-    const response = await fetch(baseURL + "/sendTextBoxes", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: req,
-    });
-
-    const data = await response.text();
-    console.log("Response:", data);
-  };
-
-  const SendPhoneNumbers = async () => {
-    const response = await fetch(baseURL + "/initAuth", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        contacts: Array.from(new Set(phoneNumbers)),
-        phone: "+91" + phone,
-      }),
-    });
-    const data = await response.json();
-    console.log(data);
   };
 
   // Function to handle file change
@@ -385,27 +451,7 @@ function App() {
   };
 
   const handleFinalSubmit = async () => {
-    setIsLoading(true);
-    if (!selectedFile) {
-      console.error("No file selected.");
-      return;
-    }
-
-    const formdata = new FormData();
-    formdata.append("image", selectedFile);
-
-    fetch(baseURL + "/uploadImage", {
-      method: "POST",
-      body: formdata,
-    })
-      .then((response) => response.text())
-      .then((result) => console.log(result))
-      .then(() => SendTextBoxRequest())
-      .then(() => {
-        SendPhoneNumbers();
-        setIsLoading(false);
-      })
-      .catch((error) => console.error(error));
+    setSendData(true);
   };
 
   useEffect(() => {
@@ -731,7 +777,6 @@ function App() {
                     </Table>
                     {items.length > 0 && (
                       <DND
-                      
                         items={items}
                         key={1}
                         handleDragEnd={handleDragEnd}
@@ -859,7 +904,7 @@ function App() {
                     {!isLoading ? (
                       <Button
                         onClick={() => {
-                          SendOTP();
+                          sendOTP(otp);
                         }}
                         className="otp-submit-button"
                       >
