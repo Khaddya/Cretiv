@@ -1,5 +1,5 @@
 import "./App.css";
-import { Binary, Bold, Italic, User2 } from "lucide-react";
+import { Bold, Italic, User2 } from "lucide-react";
 import { Input } from "./components/ui/input";
 import { ChangeEvent, useRef, useState, useEffect } from "react";
 import Papa from "papaparse";
@@ -46,7 +46,6 @@ import { Toggle } from "./components/ui/toggle";
 import DND from "./DND";
 import { arrayMove } from "@dnd-kit/sortable";
 import LoadingOverlay from "react-loading-overlay-ts";
-import { buffer } from "stream/consumers";
 import { useToast } from "./components/ui/use-toast";
 interface ParsedData {
   [key: string]: string;
@@ -215,7 +214,7 @@ function App() {
   const [isConnected, setIsConnected] = useState(false);
   useEffect(() => {
     const connectWebSocket = () => {
-      const ws = new WebSocket("ws://localhost:8080/ws");
+      const ws = new WebSocket("wss://custom-photo-generator.onrender.com/ws");
 
       ws.onopen = () => {
         console.log("Connected to WebSocket server");
