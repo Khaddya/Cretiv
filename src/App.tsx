@@ -546,7 +546,9 @@ function App() {
 
   return (
     <>
-      <nav className="h-[70px] w-full"></nav>
+      <nav className="  h-[70px] w-full  bg-slate-100 justify-start">
+        <img src="/main_logo.png" alt="hi" className="w-[150px] h-[80px]" />
+      </nav>
       <div className="w-full bg-white   flex">
         <div className="flex w-screen bg-slate-100 h-screen">
           <div className="relative bg-slate-100 flex flex-1 flex-col items-center   ">
